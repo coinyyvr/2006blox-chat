@@ -172,7 +172,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {/* Footer */}
         <div className="blox-footer" data-testid="layout-footer">
           <div>
-            2006blox Chat &mdash; "Online Building &amp; Chatting Community" &mdash; All content created by our members.
+            2006blox Chat &mdash; "Reviving 2006 Roblox's Forum" &mdash; All content created by our members.
           </div>
           <div style={{ marginTop: "4px" }}>
             2006blox is not affiliated with Roblox or the Roblox Corporation. All times are {selectedTz.label}.

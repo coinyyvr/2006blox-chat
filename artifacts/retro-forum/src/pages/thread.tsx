@@ -1,40 +1,42 @@
 import { useState } from "react";
 import { useParams, Link } from "wouter";
 import { Layout } from "../components/layout";
-import { CATEGORIES, THREADS, Post } from "../lib/mock-data";
+import { CATEGORIES } from "../lib/mock-data";
 import { useStats } from "../context/stats-context";
 
 export default function Thread() {
   const { id } = useParams();
-  const { addPost } = useStats();
+  const { threadsByForum, postsByThread, addPost } = useStats();
 
-  const [livePosts, setLivePosts] = useState<Post[]>([]);
   const [replyText, setReplyText] = useState("");
   const [showForm, setShowForm] = useState(false);
 
-  let threadInfo = null;
-  let forumInfo = null;
+  // Find thread — first in live threads, then nowhere (we no longer use mock threads)
+  let threadInfo: { id: string; forumId: string; title: string; author: string } | null = null;
+  let forumInfo: { id: string; name: string } | null = null;
 
-  for (const fId in THREADS) {
-    const t = THREADS[fId].find((th) => th.id === id);
-    if (t) {
-      threadInfo = t;
+  for (const forumId in threadsByForum) {
+    const found = threadsByForum[forumId].find((t) => t.id === id);
+    if (found) {
+      threadInfo = found;
       for (const cat of CATEGORIES) {
-        const f = cat.forums.find((forum) => forum.id === fId);
+        const f = cat.forums.find((forum) => forum.id === forumId);
         if (f) { forumInfo = f; break; }
       }
       break;
     }
   }
 
+  const posts = postsByThread[id as string] ?? [];
+
   if (!threadInfo || !forumInfo) {
     return (
       <Layout>
         <div className="blox-breadcrumbs">
-          <Link href="/">2006blox Chat</Link> &rsaquo; Invalid Thread
+          <Link href="/">2006blox Chat</Link> &rsaquo; Thread Not Found
         </div>
         <div style={{ padding: "20px", textAlign: "center", border: "1px solid #8899bb", backgroundColor: "#eef2f8" }}>
-          The thread you selected does not exist.
+          This thread doesn't exist yet — or you may have navigated here before creating it.
         </div>
       </Layout>
     );
@@ -44,27 +46,7 @@ export default function Thread() {
     e.preventDefault();
     const trimmed = replyText.trim();
     if (!trimmed) return;
-
-    const now = new Date().toLocaleString("en-US", {
-      month: "short", day: "numeric", year: "numeric",
-      hour: "numeric", minute: "2-digit", hour12: true,
-    });
-
-    const newPost: Post = {
-      id: `live-${Date.now()}`,
-      threadId: id as string,
-      author: { name: "Guest", joinDate: "Today", posts: 1, rank: "Newbie" },
-      date: now,
-      content: trimmed,
-    };
-
-    setLivePosts((prev) => [...prev, newPost]);
-    addPost(forumInfo!.id, {
-      date: now,
-      author: "Guest",
-      threadId: id as string,
-      threadTitle: threadInfo!.title,
-    });
+    addPost(forumInfo!.id, id as string, threadInfo!.title, trimmed);
     setReplyText("");
     setShowForm(false);
   }
@@ -78,14 +60,12 @@ export default function Thread() {
       </div>
 
       <div className="blox-action-bar">
-        {threadInfo.isLocked ? (
-          <span className="blox-locked-label">[ This topic is locked. ]</span>
-        ) : (
-          <button className="blox-btn" data-testid="button-post-reply" onClick={() => setShowForm((v) => !v)}>
-            {showForm ? "Cancel" : "Post Reply"}
-          </button>
-        )}
-        <span className="blox-meta">Page 1 of 1 &mdash; {livePosts.length} {livePosts.length === 1 ? "reply" : "replies"}</span>
+        <button className="blox-btn" data-testid="button-post-reply" onClick={() => setShowForm((v) => !v)}>
+          {showForm ? "Cancel" : "Post Reply"}
+        </button>
+        <span className="blox-meta">
+          Page 1 of 1 &mdash; {posts.length - 1} {posts.length - 1 === 1 ? "reply" : "replies"}
+        </span>
       </div>
 
       <table className="blox-table" data-testid={`thread-posts-${id}`}>
@@ -96,19 +76,12 @@ export default function Thread() {
           </tr>
         </thead>
         <tbody>
-          {livePosts.length === 0 && (
-            <tr>
-              <td colSpan={2} style={{ textAlign: "center", padding: "20px", color: "#555" }}>
-                No replies yet. Be the first to reply!
-              </td>
-            </tr>
-          )}
-          {livePosts.map((post, idx) => (
+          {posts.map((post, idx) => (
             <tr key={post.id} data-testid={`post-row-${post.id}`}>
               <td className="blox-post-user-col" style={{ backgroundColor: idx % 2 === 0 ? "#dde4ee" : "#ccd4e4" }}>
-                <span className="blox-username" data-testid={`text-username-${post.id}`}>{post.author.name}</span>
-                <span className="blox-user-rank">{post.author.rank}</span>
-                <div className="blox-avatar" data-testid={`img-avatar-${post.id}`}>
+                <span className="blox-username">{post.author}</span>
+                <span className="blox-user-rank">Newbie</span>
+                <div className="blox-avatar">
                   <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#6677aa" strokeWidth="1.5">
                     <rect x="3" y="3" width="18" height="14" rx="1"/>
                     <circle cx="12" cy="9" r="3"/>
@@ -116,33 +89,29 @@ export default function Thread() {
                   </svg>
                 </div>
                 <div className="blox-user-stats">
-                  <div>Joined: {post.author.joinDate}</div>
-                  <div>Posts: <b>{post.author.posts}</b></div>
+                  <div>Joined: Today</div>
+                  <div>Posts: <b>{idx + 1}</b></div>
                 </div>
                 <div style={{ marginTop: "8px", fontSize: "10px" }}>
-                  <a href="#" data-testid={`link-profile-${post.id}`}>Profile</a>
-                  {" | "}
-                  <a href="#" data-testid={`link-pm-${post.id}`}>PM</a>
+                  <a href="#">Profile</a>{" | "}<a href="#">PM</a>
                 </div>
               </td>
               <td className="blox-post-content-col" style={{ backgroundColor: idx % 2 === 0 ? "#ffffff" : "#f4f7fc" }}>
                 <div className="blox-post-header">
                   <span>Posted: {post.date}</span>
                   <span>
-                    <a href={`#${post.id}`} data-testid={`link-post-num-${post.id}`}>#{idx + 1}</a>
-                    {" "}
-                    <a href="#" style={{ fontSize: "10px", marginLeft: "6px" }}>Quote</a>
+                    <a href={`#${post.id}`}>#{idx + 1}</a>
+                    {" "}<a href="#" style={{ fontSize: "10px", marginLeft: "6px" }}>Quote</a>
                   </span>
                 </div>
                 <div className="blox-post-body" data-testid={`text-post-content-${post.id}`}>{post.content}</div>
-                {post.signature && <div className="blox-post-sig">{post.signature}</div>}
               </td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      {showForm && !threadInfo.isLocked && (
+      {showForm && (
         <form onSubmit={handleSubmit} data-testid="form-reply">
           <table className="blox-table" style={{ marginTop: "10px" }}>
             <thead>
@@ -156,6 +125,7 @@ export default function Thread() {
                     value={replyText}
                     onChange={(e) => setReplyText(e.target.value)}
                     rows={6}
+                    autoFocus
                     style={{ width: "100%", fontFamily: "Verdana, Arial, sans-serif", fontSize: "12px", border: "1px solid #8899bb", padding: "6px", resize: "vertical", boxSizing: "border-box" }}
                     placeholder="Write your reply here..."
                   />
@@ -175,11 +145,9 @@ export default function Thread() {
       )}
 
       <div className="blox-action-bar" style={{ marginTop: "6px" }}>
-        {!threadInfo.isLocked && (
-          <button className="blox-btn" data-testid="button-post-reply-bottom" onClick={() => setShowForm((v) => !v)}>
-            {showForm ? "Cancel" : "Post Reply"}
-          </button>
-        )}
+        <button className="blox-btn" data-testid="button-post-reply-bottom" onClick={() => setShowForm((v) => !v)}>
+          {showForm ? "Cancel" : "Post Reply"}
+        </button>
       </div>
     </Layout>
   );

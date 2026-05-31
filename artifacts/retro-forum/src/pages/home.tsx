@@ -4,7 +4,7 @@ import { CATEGORIES } from "../lib/mock-data";
 import { useStats } from "../context/stats-context";
 
 export default function Home() {
-  const { forumPosts, forumThreads, forumLastPost } = useStats();
+  const { forumStats } = useStats();
 
   return (
     <Layout>
@@ -26,9 +26,7 @@ export default function Home() {
           </thead>
           <tbody>
             {cat.forums.map((forum, idx) => {
-              const posts = forumPosts[forum.id] ?? 0;
-              const threads = forumThreads[forum.id] ?? 0;
-              const lastPost = forumLastPost[forum.id] ?? null;
+              const stat = forumStats[forum.id] ?? { posts: 0, threads: 0, lastPost: null };
               return (
                 <tr key={forum.id} className={idx % 2 === 0 ? "blox-row-odd" : "blox-row-even"} data-testid={`forum-row-${forum.id}`}>
                   <td style={{ width: "38px", textAlign: "center", padding: "6px" }}>
@@ -42,23 +40,21 @@ export default function Home() {
                     </Link>
                     <span className="blox-forum-desc">{forum.description}</span>
                   </td>
-                  <td style={{ textAlign: "center" }} className="blox-meta" data-testid={`text-threads-${forum.id}`}>{threads}</td>
-                  <td style={{ textAlign: "center" }} className="blox-meta" data-testid={`text-posts-${forum.id}`}>{posts}</td>
+                  <td style={{ textAlign: "center" }} className="blox-meta">{stat.threads}</td>
+                  <td style={{ textAlign: "center" }} className="blox-meta">{stat.posts}</td>
                   <td className="blox-meta" style={{ whiteSpace: "nowrap", fontSize: "11px" }}>
-                    {lastPost ? (
+                    {stat.lastPost ? (
                       <>
-                        {lastPost.date}
-                        <br />
+                        {stat.lastPost.date}<br />
                         by{" "}
-                        <Link href={`/thread/${lastPost.threadId}`} data-testid={`last-post-link-${forum.id}`}>
-                          <b>{lastPost.author}</b>
+                        <Link href={`/thread/${stat.lastPost.threadId}`}>
+                          <b>{stat.lastPost.author}</b>
                         </Link>
                         <br />
                         <svg style={{ display: "inline", verticalAlign: "middle" }} xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#3355aa" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                           <polyline points="9 18 15 12 9 6"/>
-                        </svg>
-                        {" "}
-                        <Link href={`/thread/${lastPost.threadId}`} style={{ fontSize: "10px" }}>
+                        </svg>{" "}
+                        <Link href={`/thread/${stat.lastPost.threadId}`} style={{ fontSize: "10px" }}>
                           View last post
                         </Link>
                       </>

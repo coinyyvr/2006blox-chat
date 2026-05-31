@@ -1,14 +1,14 @@
 import { useState } from "react";
-import { useParams, Link } from "wouter";
+import { useParams, Link, useLocation } from "wouter";
 import { Layout } from "../components/layout";
-import { CATEGORIES, Thread } from "../lib/mock-data";
+import { CATEGORIES } from "../lib/mock-data";
 import { useStats } from "../context/stats-context";
 
 export default function Forum() {
   const { id } = useParams();
-  const { forumThreads, addThread } = useStats();
+  const [, navigate] = useLocation();
+  const { threadsByForum, forumStats, addThread } = useStats();
 
-  const [liveThreads, setLiveThreads] = useState<Thread[]>([]);
   const [showNewThread, setShowNewThread] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newBody, setNewBody] = useState("");
@@ -32,35 +32,19 @@ export default function Forum() {
     );
   }
 
-  const threadCount = forumThreads[id as string] ?? 0;
+  const threads = threadsByForum[id as string] ?? [];
+  const stat = forumStats[id as string] ?? { threads: 0 };
 
   function handleNewThread(e: React.FormEvent) {
     e.preventDefault();
     const title = newTitle.trim();
     const body = newBody.trim();
     if (!title || !body) return;
-
-    const now = new Date().toLocaleString("en-US", {
-      month: "short", day: "numeric", year: "numeric",
-      hour: "numeric", minute: "2-digit", hour12: true,
-    });
-    const threadId = `live-thread-${Date.now()}`;
-
-    const newThread: Thread = {
-      id: threadId,
-      forumId: id as string,
-      title,
-      author: "Guest",
-      replies: 0,
-      views: 1,
-      lastPost: { date: now, author: "Guest" },
-    };
-
-    setLiveThreads((prev) => [newThread, ...prev]);
-    addThread(id as string, threadId, title);
+    const threadId = addThread(id as string, title, body);
     setNewTitle("");
     setNewBody("");
     setShowNewThread(false);
+    navigate(`/thread/${threadId}`);
   }
 
   return (
@@ -73,10 +57,11 @@ export default function Forum() {
         <button className="blox-btn" data-testid="button-new-topic" onClick={() => setShowNewThread((v) => !v)}>
           {showNewThread ? "Cancel" : "New Topic"}
         </button>
-        <span className="blox-meta">Page 1 of 1 &mdash; {threadCount} {threadCount === 1 ? "thread" : "threads"}</span>
+        <span className="blox-meta">
+          Page 1 of 1 &mdash; {stat.threads} {stat.threads === 1 ? "thread" : "threads"}
+        </span>
       </div>
 
-      {/* New thread form */}
       {showNewThread && (
         <form onSubmit={handleNewThread} data-testid="form-new-thread">
           <table className="blox-table" style={{ marginBottom: "10px" }}>
@@ -95,6 +80,7 @@ export default function Forum() {
                       onChange={(e) => setNewTitle(e.target.value)}
                       style={{ width: "100%", fontFamily: "Verdana, Arial, sans-serif", fontSize: "12px", border: "1px solid #8899bb", padding: "4px", boxSizing: "border-box" }}
                       placeholder="Thread title..."
+                      autoFocus
                     />
                   </div>
                   <div style={{ marginBottom: "8px" }}>
@@ -134,14 +120,14 @@ export default function Forum() {
           </tr>
         </thead>
         <tbody>
-          {liveThreads.length === 0 && (
+          {threads.length === 0 && (
             <tr className="blox-row-odd">
               <td colSpan={6} style={{ textAlign: "center", padding: "20px", color: "#555" }}>
                 There are no threads in this forum yet. Be the first to post!
               </td>
             </tr>
           )}
-          {liveThreads.map((thread, idx) => (
+          {threads.map((thread, idx) => (
             <tr key={thread.id} className={idx % 2 === 0 ? "blox-row-odd" : "blox-row-even"} data-testid={`thread-row-${thread.id}`}>
               <td style={{ width: "32px", textAlign: "center", padding: "5px" }}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3355aa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -157,8 +143,7 @@ export default function Forum() {
               <td style={{ textAlign: "center" }} className="blox-meta">{thread.replies}</td>
               <td style={{ textAlign: "center" }} className="blox-meta">{thread.views}</td>
               <td className="blox-meta" style={{ whiteSpace: "nowrap" }}>
-                {thread.lastPost.date}<br />
-                by <b>{thread.lastPost.author}</b>
+                {thread.date}<br />by <b>{thread.author}</b>
               </td>
             </tr>
           ))}

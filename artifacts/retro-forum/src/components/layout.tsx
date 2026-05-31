@@ -19,14 +19,23 @@ export function Layout({ children }: { children: React.ReactNode }) {
           style={{ width: "100%", display: "block" }}
           data-testid="img-header-banner"
         />
-        <div className="blox-banner-login" style={{ position: "absolute", top: "8px", right: "12px" }} data-testid="banner-login-box">
-          <div style={{ marginBottom: "4px", fontWeight: "bold", fontSize: "12px" }}>Login</div>
-          <div>
-            <a href="#" data-testid="link-login">Log in</a>
-            {" | "}
-            <a href="#" data-testid="link-register">Register</a>
-          </div>
-        </div>
+        <a
+          href="/login"
+          data-testid="link-login"
+          style={{
+            position: "absolute",
+            top: "10px",
+            left: "12px",
+            color: "#ffffff",
+            fontWeight: "bold",
+            fontSize: "13px",
+            fontFamily: "Verdana, Arial, sans-serif",
+            textDecoration: "none",
+            textShadow: "1px 1px 2px #000",
+          }}
+        >
+          Login
+        </a>
       </div>
 
       {/* Top nav */}

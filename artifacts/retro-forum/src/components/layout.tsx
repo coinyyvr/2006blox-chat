@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { FORUM_STATS } from "../lib/mock-data";
+import { useStats } from "../context/stats-context";
 import headerImg from "@assets/header_1780191353809.png";
 
 function getCurrentTime() {
@@ -9,6 +9,7 @@ function getCurrentTime() {
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  const { totalPosts, totalMembers, newestMember } = useStats();
   return (
     <div className="blox-page" data-testid="layout-container">
       {/* Banner */}
@@ -84,10 +85,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <div className="blox-sidebar-box-title">Forum Stats</div>
               <div className="blox-sidebar-box-body">
                 <div style={{ fontSize: "10px", lineHeight: "1.7", color: "#333" }}>
-                  <div>Posts: <b>{FORUM_STATS.totalPosts.toLocaleString()}</b></div>
-                  <div>Members: <b>{FORUM_STATS.totalMembers.toLocaleString()}</b></div>
-                  <div>Newest: <b><a href="#" data-testid="link-newest-member">{FORUM_STATS.newestMember}</a></b></div>
-                  <div>Most online: <b>{FORUM_STATS.mostOnline}</b></div>
+                  <div>Posts: <b>{totalPosts.toLocaleString()}</b></div>
+                  <div>Members: <b>{totalMembers.toLocaleString()}</b></div>
+                  <div>Newest: <b><a href="#" data-testid="link-newest-member">{newestMember}</a></b></div>
                 </div>
               </div>
             </div>

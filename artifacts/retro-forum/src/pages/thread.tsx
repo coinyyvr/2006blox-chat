@@ -1,9 +1,16 @@
+import { useState } from "react";
 import { useParams, Link } from "wouter";
 import { Layout } from "../components/layout";
-import { CATEGORIES, THREADS, POSTS } from "../lib/mock-data";
+import { CATEGORIES, THREADS, POSTS, Post } from "../lib/mock-data";
+import { useStats } from "../context/stats-context";
 
 export default function Thread() {
   const { id } = useParams();
+  const { addPost } = useStats();
+
+  const [livePosts, setLivePosts] = useState<Post[]>(() => POSTS[id as string] || []);
+  const [replyText, setReplyText] = useState("");
+  const [showForm, setShowForm] = useState(false);
 
   let threadInfo = null;
   let forumInfo = null;
@@ -20,8 +27,6 @@ export default function Thread() {
     }
   }
 
-  const posts = POSTS[id as string] || [];
-
   if (!threadInfo || !forumInfo) {
     return (
       <Layout>
@@ -33,6 +38,36 @@ export default function Thread() {
         </div>
       </Layout>
     );
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmed = replyText.trim();
+    if (!trimmed) return;
+
+    const now = new Date();
+    const dateStr = now.toLocaleString("en-US", {
+      month: "short", day: "numeric", year: "numeric",
+      hour: "numeric", minute: "2-digit", hour12: true,
+    });
+
+    const newPost: Post = {
+      id: `live-${Date.now()}`,
+      threadId: id as string,
+      author: {
+        name: "Guest",
+        joinDate: "Today",
+        posts: 1,
+        rank: "Newbie",
+      },
+      date: dateStr,
+      content: trimmed,
+    };
+
+    setLivePosts((prev) => [...prev, newPost]);
+    addPost();
+    setReplyText("");
+    setShowForm(false);
   }
 
   return (
@@ -47,9 +82,11 @@ export default function Thread() {
         {threadInfo.isLocked ? (
           <span className="blox-locked-label">[ This topic is locked: you cannot edit posts or make replies. ]</span>
         ) : (
-          <button className="blox-btn" data-testid="button-post-reply">Post Reply</button>
+          <button className="blox-btn" data-testid="button-post-reply" onClick={() => setShowForm((v) => !v)}>
+            {showForm ? "Cancel" : "Post Reply"}
+          </button>
         )}
-        <span className="blox-meta">Page 1 of 1</span>
+        <span className="blox-meta">Page 1 of 1 &mdash; {livePosts.length} {livePosts.length === 1 ? "post" : "posts"}</span>
       </div>
 
       <table className="blox-table" data-testid={`thread-posts-${id}`}>
@@ -60,16 +97,15 @@ export default function Thread() {
           </tr>
         </thead>
         <tbody>
-          {posts.length === 0 && (
+          {livePosts.length === 0 && (
             <tr>
               <td colSpan={2} style={{ textAlign: "center", padding: "20px", color: "#555" }}>
                 No posts in this thread yet.
               </td>
             </tr>
           )}
-          {posts.map((post, idx) => (
+          {livePosts.map((post, idx) => (
             <tr key={post.id} data-testid={`post-row-${post.id}`}>
-              {/* User column */}
               <td className="blox-post-user-col" style={{ backgroundColor: idx % 2 === 0 ? "#dde4ee" : "#ccd4e4" }}>
                 <span
                   className="blox-username"
@@ -97,7 +133,6 @@ export default function Thread() {
                 </div>
               </td>
 
-              {/* Post content column */}
               <td className="blox-post-content-col" style={{ backgroundColor: idx % 2 === 0 ? "#ffffff" : "#f4f7fc" }}>
                 <div className="blox-post-header">
                   <span>Posted: {post.date}</span>
@@ -113,9 +148,7 @@ export default function Thread() {
                   {post.content}
                 </div>
                 {post.signature && (
-                  <div className="blox-post-sig">
-                    {post.signature}
-                  </div>
+                  <div className="blox-post-sig">{post.signature}</div>
                 )}
               </td>
             </tr>
@@ -123,13 +156,69 @@ export default function Thread() {
         </tbody>
       </table>
 
-      <div className="blox-action-bar">
-        {threadInfo.isLocked ? (
-          <span className="blox-locked-label">[ This topic is locked: you cannot edit posts or make replies. ]</span>
-        ) : (
-          <button className="blox-btn" data-testid="button-post-reply-bottom">Post Reply</button>
+      {/* Reply form */}
+      {showForm && !threadInfo.isLocked && (
+        <form onSubmit={handleSubmit} data-testid="form-reply">
+          <table className="blox-table" style={{ marginTop: "10px" }}>
+            <thead>
+              <tr>
+                <th style={{ textAlign: "left" }}>Post a Reply</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="blox-row-odd">
+                <td style={{ padding: "10px" }}>
+                  <textarea
+                    data-testid="input-reply-text"
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    rows={6}
+                    style={{
+                      width: "100%",
+                      fontFamily: "Verdana, Arial, sans-serif",
+                      fontSize: "12px",
+                      border: "1px solid #8899bb",
+                      padding: "6px",
+                      resize: "vertical",
+                      boxSizing: "border-box",
+                    }}
+                    placeholder="Write your reply here..."
+                  />
+                  <div style={{ marginTop: "8px", display: "flex", gap: "8px" }}>
+                    <button
+                      type="submit"
+                      className="blox-btn"
+                      data-testid="button-submit-reply"
+                      disabled={!replyText.trim()}
+                    >
+                      Submit Reply
+                    </button>
+                    <button
+                      type="button"
+                      className="blox-btn"
+                      data-testid="button-cancel-reply"
+                      onClick={() => { setShowForm(false); setReplyText(""); }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </form>
+      )}
+
+      <div className="blox-action-bar" style={{ marginTop: "6px" }}>
+        {!threadInfo.isLocked && (
+          <button
+            className="blox-btn"
+            data-testid="button-post-reply-bottom"
+            onClick={() => setShowForm((v) => !v)}
+          >
+            {showForm ? "Cancel" : "Post Reply"}
+          </button>
         )}
-        <span className="blox-meta">Page 1 of 1</span>
       </div>
     </Layout>
   );

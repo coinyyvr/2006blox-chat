@@ -13,11 +13,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="blox-page" data-testid="layout-container">
       {/* Banner */}
-      <div style={{ position: "relative", border: "2px solid #000", backgroundColor: "#ffffff", height: "120px", display: "flex", alignItems: "center", justifyContent: "center", outline: "1px solid #555" }} data-testid="layout-banner">
+      <div style={{ position: "relative", borderBottom: "2px solid #000", backgroundColor: "#ffffff", height: "120px", display: "flex", alignItems: "center", justifyContent: "center" }} data-testid="layout-banner">
         <img
           src={headerImg}
           alt="2006blox chat"
-          style={{ height: "120px", width: "auto", display: "block" }}
+          style={{ height: "120px", width: "auto", display: "block", border: "2px solid #000", outline: "1px solid #555" }}
           data-testid="img-header-banner"
         />
         <a

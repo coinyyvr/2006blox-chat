@@ -11,14 +11,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="blox-page" data-testid="layout-container">
       {/* Banner */}
-      <div className="blox-banner" data-testid="layout-banner">
-        <div className="blox-banner-left">
-          <div>
-            <div className="blox-logo-text">2006blox chat</div>
-            <div className="blox-logo-sub">the classic community - building, chatting, and having fun since 2006</div>
-          </div>
-        </div>
-        <div className="blox-banner-login" data-testid="banner-login-box">
+      <div style={{ position: "relative", borderBottom: "2px solid #000", lineHeight: 0 }} data-testid="layout-banner">
+        <img
+          src="/api/storage/public-objects/header.png"
+          alt="2006blox chat"
+          style={{ width: "100%", display: "block", maxHeight: "120px", objectFit: "cover", objectPosition: "center top" }}
+          data-testid="img-header-banner"
+        />
+        <div className="blox-banner-login" style={{ position: "absolute", top: "8px", right: "12px" }} data-testid="banner-login-box">
           <div style={{ marginBottom: "4px", fontWeight: "bold", fontSize: "12px" }}>Login</div>
           <div>
             <a href="#" data-testid="link-login">Log in</a>

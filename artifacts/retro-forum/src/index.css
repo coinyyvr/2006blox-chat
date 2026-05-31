@@ -121,8 +121,8 @@
 
 /* ── Top nav bar ── */
 .blox-topnav {
-  background-color: #dde4ee;
-  border-bottom: 1px solid #aaaaaa;
+  background-color: transparent;
+  border-bottom: none;
   padding: 4px 8px;
   font-size: 11px;
   display: flex;
@@ -418,9 +418,8 @@
 
 /* ── Footer ── */
 .blox-footer {
-  background-color: #dde4ee;
-  border: 1px solid #8899bb;
-  border-top: 2px solid #3355aa;
+  background-color: transparent;
+  border: none;
   padding: 10px;
   text-align: center;
   font-size: 11px;

@@ -1,15 +1,52 @@
+import { useState } from "react";
 import { Link } from "wouter";
 import { useStats } from "../context/stats-context";
 import headerImg from "@assets/header_1780191353809.png";
 
-function getCurrentTime() {
-  return new Date().toLocaleString("en-US", {
-    month: "short", day: "numeric", hour: "numeric", minute: "2-digit", hour12: true
+const TIMEZONES = [
+  { label: "GMT-12", offset: -12 },
+  { label: "GMT-11", offset: -11 },
+  { label: "GMT-10", offset: -10 },
+  { label: "GMT-9",  offset: -9  },
+  { label: "GMT-8",  offset: -8  },
+  { label: "GMT-7",  offset: -7  },
+  { label: "GMT-6",  offset: -6  },
+  { label: "GMT-5",  offset: -5  },
+  { label: "GMT-4",  offset: -4  },
+  { label: "GMT-3",  offset: -3  },
+  { label: "GMT-2",  offset: -2  },
+  { label: "GMT-1",  offset: -1  },
+  { label: "GMT+0",  offset: 0   },
+  { label: "GMT+1",  offset: 1   },
+  { label: "GMT+2",  offset: 2   },
+  { label: "GMT+3",  offset: 3   },
+  { label: "GMT+4",  offset: 4   },
+  { label: "GMT+5",  offset: 5   },
+  { label: "GMT+5:30", offset: 5.5 },
+  { label: "GMT+6",  offset: 6   },
+  { label: "GMT+7",  offset: 7   },
+  { label: "GMT+8",  offset: 8   },
+  { label: "GMT+9",  offset: 9   },
+  { label: "GMT+10", offset: 10  },
+  { label: "GMT+11", offset: 11  },
+  { label: "GMT+12", offset: 12  },
+];
+
+function getTimeInZone(offsetHours: number) {
+  const now = new Date();
+  const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+  const zoned = new Date(utc + offsetHours * 3600000);
+  return zoned.toLocaleString("en-US", {
+    month: "short", day: "numeric", hour: "numeric", minute: "2-digit", hour12: true,
   });
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { totalPosts, totalMembers, newestMember } = useStats();
+  const [tzOffset, setTzOffset] = useState(-3);
+
+  const selectedTz = TIMEZONES.find((t) => t.offset === tzOffset) ?? TIMEZONES[9];
+
   return (
     <div className="blox-page" data-testid="layout-container">
       {/* Banner */}
@@ -54,8 +91,25 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <span className="sep">|</span>
           <a href="#" data-testid="link-members">Member List</a>
         </div>
-        <div className="blox-current-time">
-          Current time: {getCurrentTime()}
+        <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", fontWeight: "bold", color: "#333" }}>
+          <span>Current time: {getTimeInZone(tzOffset)}</span>
+          <select
+            data-testid="select-timezone"
+            value={tzOffset}
+            onChange={(e) => setTzOffset(Number(e.target.value))}
+            style={{
+              fontSize: "10px",
+              fontFamily: "Verdana, Arial, sans-serif",
+              border: "1px solid #8899bb",
+              backgroundColor: "#f0f4ff",
+              padding: "1px 2px",
+              cursor: "pointer",
+            }}
+          >
+            {TIMEZONES.map((tz) => (
+              <option key={tz.label} value={tz.offset}>{tz.label}</option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -115,7 +169,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             2006blox Chat &mdash; "Online Building &amp; Chatting Community" &mdash; All content created by our members.
           </div>
           <div style={{ marginTop: "4px" }}>
-            2006blox is not affiliated with LEGO, Hasbro, or any other toy company. All times are GMT-5.
+            2006blox is not affiliated with Roblox or the Roblox Corporation. All times are {selectedTz.label}.
           </div>
           <div style={{ marginTop: "6px" }}>
             <a href="#">Privacy Policy</a>

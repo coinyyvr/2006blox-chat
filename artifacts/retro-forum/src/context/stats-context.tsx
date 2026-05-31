@@ -1,4 +1,4 @@
-import { useState, useContext, createContext, useCallback } from "react";
+import { useState, useContext, createContext, useCallback, useEffect } from "react";
 
 export interface LiveThread {
   id: string;
@@ -44,11 +44,31 @@ interface StatsContextValue {
 
 const StatsContext = createContext<StatsContextValue | null>(null);
 
+function load<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function save(key: string, value: unknown) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {}
+}
+
 export function StatsProvider({ children }: { children: React.ReactNode }) {
-  const [totalPosts, setTotalPosts] = useState(0);
-  const [forumStats, setForumStats] = useState<Record<string, ForumStat>>({});
-  const [threadsByForum, setThreadsByForum] = useState<Record<string, LiveThread[]>>({});
-  const [postsByThread, setPostsByThread] = useState<Record<string, LivePost[]>>({});
+  const [totalPosts, setTotalPosts] = useState<number>(() => load("blox_totalPosts", 0));
+  const [forumStats, setForumStats] = useState<Record<string, ForumStat>>(() => load("blox_forumStats", {}));
+  const [threadsByForum, setThreadsByForum] = useState<Record<string, LiveThread[]>>(() => load("blox_threadsByForum", {}));
+  const [postsByThread, setPostsByThread] = useState<Record<string, LivePost[]>>(() => load("blox_postsByThread", {}));
+
+  useEffect(() => { save("blox_totalPosts", totalPosts); }, [totalPosts]);
+  useEffect(() => { save("blox_forumStats", forumStats); }, [forumStats]);
+  useEffect(() => { save("blox_threadsByForum", threadsByForum); }, [threadsByForum]);
+  useEffect(() => { save("blox_postsByThread", postsByThread); }, [postsByThread]);
 
   const addThread = useCallback((forumId: string, title: string, body: string): string => {
     const now = new Date().toLocaleString("en-US", {
@@ -66,18 +86,23 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
       id: postId, threadId, author: "Guest", date: now, content: body,
     };
 
-    setThreadsByForum((prev) => ({
-      ...prev,
-      [forumId]: [newThread, ...(prev[forumId] ?? [])],
-    }));
-    setPostsByThread((prev) => ({
-      ...prev,
-      [threadId]: [firstPost],
-    }));
-    setTotalPosts((n) => n + 1);
+    setThreadsByForum((prev) => {
+      const updated = { ...prev, [forumId]: [newThread, ...(prev[forumId] ?? [])] };
+      save("blox_threadsByForum", updated);
+      return updated;
+    });
+    setPostsByThread((prev) => {
+      const updated = { ...prev, [threadId]: [firstPost] };
+      save("blox_postsByThread", updated);
+      return updated;
+    });
+    setTotalPosts((n) => {
+      save("blox_totalPosts", n + 1);
+      return n + 1;
+    });
     setForumStats((prev) => {
       const cur = prev[forumId] ?? { posts: 0, threads: 0, lastPost: null };
-      return {
+      const updated = {
         ...prev,
         [forumId]: {
           posts: cur.posts + 1,
@@ -85,6 +110,8 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
           lastPost: { date: now, author: "Guest", threadId, threadTitle: title },
         },
       };
+      save("blox_forumStats", updated);
+      return updated;
     });
 
     return threadId;
@@ -96,28 +123,30 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
       hour: "numeric", minute: "2-digit", hour12: true,
     });
     const postId = `post-${Date.now()}`;
+    const newPost: LivePost = { id: postId, threadId, author: "Guest", date: now, content };
 
-    const newPost: LivePost = {
-      id: postId, threadId, author: "Guest", date: now, content,
-    };
-
-    setPostsByThread((prev) => ({
-      ...prev,
-      [threadId]: [...(prev[threadId] ?? []), newPost],
-    }));
+    setPostsByThread((prev) => {
+      const updated = { ...prev, [threadId]: [...(prev[threadId] ?? []), newPost] };
+      save("blox_postsByThread", updated);
+      return updated;
+    });
     setThreadsByForum((prev) => {
-      const threads = prev[forumId] ?? [];
-      return {
+      const updated = {
         ...prev,
-        [forumId]: threads.map((t) =>
+        [forumId]: (prev[forumId] ?? []).map((t) =>
           t.id === threadId ? { ...t, replies: t.replies + 1 } : t
         ),
       };
+      save("blox_threadsByForum", updated);
+      return updated;
     });
-    setTotalPosts((n) => n + 1);
+    setTotalPosts((n) => {
+      save("blox_totalPosts", n + 1);
+      return n + 1;
+    });
     setForumStats((prev) => {
       const cur = prev[forumId] ?? { posts: 0, threads: 0, lastPost: null };
-      return {
+      const updated = {
         ...prev,
         [forumId]: {
           ...cur,
@@ -125,6 +154,8 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
           lastPost: { date: now, author: "Guest", threadId, threadTitle },
         },
       };
+      save("blox_forumStats", updated);
+      return updated;
     });
   }, []);
 

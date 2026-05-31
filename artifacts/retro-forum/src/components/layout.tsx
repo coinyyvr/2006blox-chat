@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { FORUM_STATS } from "../lib/mock-data";
+import headerImg from "@assets/header_1780191353809.png";
 
 function getCurrentTime() {
   return new Date().toLocaleString("en-US", {
@@ -13,9 +14,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
       {/* Banner */}
       <div style={{ position: "relative", borderBottom: "2px solid #000", lineHeight: 0 }} data-testid="layout-banner">
         <img
-          src="/api/storage/public-objects/header.png"
+          src={headerImg}
           alt="2006blox chat"
-          style={{ width: "100%", display: "block", maxHeight: "120px", objectFit: "cover", objectPosition: "center top" }}
+          style={{ width: "100%", display: "block" }}
           data-testid="img-header-banner"
         />
         <div className="blox-banner-login" style={{ position: "absolute", top: "8px", right: "12px" }} data-testid="banner-login-box">

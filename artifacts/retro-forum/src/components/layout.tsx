@@ -34,7 +34,7 @@ const TIMEZONES = [
 
 function getTimeInZone(offsetHours: number) {
   const now = new Date();
-  const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+  const utc = now.getTime() + now.getTimezoneOffset() * 60000 - 3 * 60000;
   const zoned = new Date(utc + offsetHours * 3600000);
   return zoned.toLocaleString("en-US", {
     month: "short", day: "numeric", hour: "numeric", minute: "2-digit", hour12: true,

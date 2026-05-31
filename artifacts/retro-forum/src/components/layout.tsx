@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { useStats } from "../context/stats-context";
 import headerImg from "@assets/header_1780191353809.png";
@@ -44,6 +44,12 @@ function getTimeInZone(offsetHours: number) {
 export function Layout({ children }: { children: React.ReactNode }) {
   const { totalPosts, totalMembers, newestMember } = useStats();
   const [tzOffset, setTzOffset] = useState(-3);
+  const [tick, setTick] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => setTick((n) => n + 1), 1000);
+    return () => clearInterval(id);
+  }, []);
 
   const selectedTz = TIMEZONES.find((t) => t.offset === tzOffset) ?? TIMEZONES[9];
 

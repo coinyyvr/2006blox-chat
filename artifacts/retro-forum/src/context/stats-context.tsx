@@ -163,7 +163,7 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
     <StatsContext.Provider value={{
       totalPosts,
       totalMembers: 1,
-      newestMember: "You",
+      newestMember: "expect this to work later, everyone is guest as of now.",
       forumStats,
       threadsByForum,
       postsByThread,
